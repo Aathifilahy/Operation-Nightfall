@@ -39,7 +39,7 @@ public class PlayerInteraction : MonoBehaviour
         if (nearestDoor != null)
         {
             Debug.Log("Interacting with door: " + nearestDoor.name);
-            nearestDoor.Interact();
+            nearestDoor.Interact(gameObject);
         }
         else
         {

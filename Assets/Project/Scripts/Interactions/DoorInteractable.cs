@@ -6,6 +6,8 @@ public class DoorInteractable : MonoBehaviour
     public float openSpeed = 3f;
     public bool isOpen = false;
 
+    public bool requiresKeycard = true;
+
     private Quaternion closedRotation;
     private Quaternion openRotation;
 
@@ -21,9 +23,25 @@ public class DoorInteractable : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * openSpeed);
     }
 
-    public void Interact()
+    public void Interact(GameObject player)
     {
-        isOpen = !isOpen;
-        Debug.Log("Door toggled: " + gameObject.name);
+        if (requiresKeycard)
+        {
+            PlayerInventory inventory = player.GetComponent<PlayerInventory>();
+
+            if (inventory != null && inventory.hasKeycard)
+            {
+                Debug.Log("Door unlocked with keycard!");
+                isOpen = !isOpen;
+            }
+            else
+            {
+                Debug.Log("Door is locked. Need keycard.");
+            }
+        }
+        else
+        {
+            isOpen = !isOpen;
+        }
     }
 }
