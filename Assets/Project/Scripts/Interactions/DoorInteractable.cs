@@ -25,23 +25,39 @@ public class DoorInteractable : MonoBehaviour
 
     public void Interact(GameObject player)
     {
+        InteractionUI ui = FindFirstObjectByType<InteractionUI>();
+
         if (requiresKeycard)
         {
             PlayerInventory inventory = player.GetComponent<PlayerInventory>();
 
             if (inventory != null && inventory.hasKeycard)
             {
-                Debug.Log("Door unlocked with keycard!");
                 isOpen = !isOpen;
+
+                if (ui != null)
+                {
+                    ui.ShowFeedback(isOpen ? "Door opened." : "Door closed.");
+                }
             }
             else
             {
+                if (ui != null)
+                {
+                    ui.ShowFeedback("Door is locked. Need keycard.");
+                }
+
                 Debug.Log("Door is locked. Need keycard.");
             }
         }
         else
         {
             isOpen = !isOpen;
+
+            if (ui != null)
+            {
+                ui.ShowFeedback(isOpen ? "Door opened." : "Door closed.");
+            }
         }
     }
 }

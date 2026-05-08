@@ -23,8 +23,14 @@ public class KeycardPickup : MonoBehaviour
             if (player != null)
             {
                 player.hasKeycard = true;
-                Debug.Log("Keycard picked up!");
 
+                InteractionUI ui = FindFirstObjectByType<InteractionUI>();
+                if (ui != null)
+                {
+                    ui.ShowFeedback("Keycard picked up.");
+                }
+
+                Debug.Log("Keycard picked up.");
                 Destroy(gameObject);
                 return;
             }

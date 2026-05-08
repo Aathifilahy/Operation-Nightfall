@@ -2,13 +2,18 @@ using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
 {
+    [Header("Interaction Settings")]
     public float interactRange = 4f;
+
+    [Header("UI")]
+    public InteractionUI interactionUI;
 
     void Update()
     {
+        ShowNearbyPrompt();
+
         if (Input.GetKeyDown(KeyCode.E))
         {
-            Debug.Log("E pressed");
             TryInteract();
         }
     }
@@ -38,7 +43,6 @@ public class PlayerInteraction : MonoBehaviour
 
         if (nearestDoor != null)
         {
-            Debug.Log("Interacting with door: " + nearestDoor.name);
             nearestDoor.Interact(gameObject);
         }
         else
@@ -46,6 +50,42 @@ public class PlayerInteraction : MonoBehaviour
             Debug.Log("No door nearby.");
         }
     }
+
+    void ShowNearbyPrompt()
+{
+    if (interactionUI == null) return;
+
+    Collider[] hits = Physics.OverlapSphere(transform.position, interactRange);
+
+    foreach (Collider hit in hits)
+    {
+        // Door
+        DoorInteractable door = hit.GetComponentInParent<DoorInteractable>();
+        if (door != null)
+        {
+            interactionUI.ShowText("Press E to open door");
+            return;
+        }
+
+        // Keycard
+        KeycardPickup keycard = hit.GetComponentInParent<KeycardPickup>();
+        if (keycard != null)
+        {
+            interactionUI.ShowText("Press E to pick up keycard");
+            return;
+        }
+
+        // Physics Object
+        PhysicsObject phys = hit.GetComponentInParent<PhysicsObject>();
+        if (phys != null)
+        {
+            interactionUI.ShowText("Press T to pick up object");
+            return;
+        }
+    }
+
+    interactionUI.ClearText();
+}
 
     void OnDrawGizmosSelected()
     {
