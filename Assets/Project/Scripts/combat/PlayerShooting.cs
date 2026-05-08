@@ -1,4 +1,6 @@
 using UnityEngine;
+using TMPro;
+using System.Collections;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -7,11 +9,19 @@ public class PlayerShooting : MonoBehaviour
     public float shootRange = 100f;
     public float damage = 25f;
     public float fireRate = 0.25f;
-
-    [Header("Effects")]
     public LayerMask shootableLayers;
 
+    [Header("Ammo")]
+    public int maxAmmo = 6;
+    public float reloadTime = 3f;
+
+    [Header("UI")]
+    public TextMeshProUGUI ammoText;
+    public InteractionUI interactionUI;
+
+    private int currentAmmo;
     private float nextFireTime;
+    private bool isReloading = false;
 
     void Start()
     {
@@ -19,14 +29,38 @@ public class PlayerShooting : MonoBehaviour
         {
             playerCamera = Camera.main;
         }
+
+        currentAmmo = maxAmmo;
+        UpdateAmmoUI();
     }
 
     void Update()
     {
+        if (isReloading) return;
+
         if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
         {
-            Shoot();
-            nextFireTime = Time.time + fireRate;
+            if (currentAmmo > 0)
+            {
+                Shoot();
+                currentAmmo--;
+                nextFireTime = Time.time + fireRate;
+                UpdateAmmoUI();
+
+                if (currentAmmo <= 0)
+                {
+                    StartCoroutine(Reload());
+                }
+            }
+            else
+            {
+                StartCoroutine(Reload());
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < maxAmmo)
+        {
+            StartCoroutine(Reload());
         }
     }
 
@@ -48,6 +82,46 @@ public class PlayerShooting : MonoBehaviour
         else
         {
             Debug.Log("Shot missed");
+        }
+    }
+
+    IEnumerator Reload()
+    {
+        if (isReloading) yield break;
+
+        isReloading = true;
+
+        if (interactionUI != null)
+        {
+            interactionUI.ShowFeedback("Reloading...");
+        }
+
+        UpdateAmmoUI("Reloading...");
+
+        yield return new WaitForSeconds(reloadTime);
+
+        currentAmmo = maxAmmo;
+        isReloading = false;
+
+        UpdateAmmoUI();
+
+        if (interactionUI != null)
+        {
+            interactionUI.ShowFeedback("Reload complete.");
+        }
+    }
+
+    void UpdateAmmoUI(string overrideText = "")
+    {
+        if (ammoText == null) return;
+
+        if (!string.IsNullOrEmpty(overrideText))
+        {
+            ammoText.text = overrideText;
+        }
+        else
+        {
+            ammoText.text = "Ammo: " + currentAmmo + " / " + maxAmmo;
         }
     }
 }
