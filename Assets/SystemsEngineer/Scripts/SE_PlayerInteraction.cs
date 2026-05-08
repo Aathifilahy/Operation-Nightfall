@@ -19,7 +19,7 @@ public class SE_PlayerInteraction : MonoBehaviour
 
         if (currentInteractable != null && Input.GetKeyDown(KeyCode.E))
         {
-            Debug.Log("E pressed near interactable object: " + currentInteractable.name);
+            InteractWithCurrentObject();
         }
     }
 
@@ -34,13 +34,34 @@ public class SE_PlayerInteraction : MonoBehaviour
         if (hits.Length > 0)
         {
             currentInteractable = hits[0].gameObject;
-            ShowPrompt("Press E to interact");
+
+            if (currentInteractable.GetComponent<SE_DoorInteractable>() != null)
+            {
+                ShowPrompt("Press E to open/close door");
+            }
+            else
+            {
+                ShowPrompt("Press E to interact");
+            }
         }
         else
         {
             currentInteractable = null;
             HidePrompt();
         }
+    }
+
+    void InteractWithCurrentObject()
+    {
+        SE_DoorInteractable door = currentInteractable.GetComponent<SE_DoorInteractable>();
+
+        if (door != null)
+        {
+            door.Interact();
+            return;
+        }
+
+        Debug.Log("E pressed near interactable object: " + currentInteractable.name);
     }
 
     void ShowPrompt(string message)
