@@ -38,9 +38,23 @@ public class AC_AgentMovementController : MonoBehaviour
     private int currentPathIndex = 0;
     private bool hasPath = false;
 
+    private AgentState previousState;
+
+    void Start()
+    {
+        previousState = currentState;
+        Debug.Log("Agent initial state: " + currentState);
+    }
+
     void Update()
     {
         UpdateState();
+
+        if (currentState != previousState)
+        {
+            Debug.Log("Agent state changed to: " + currentState);
+            previousState = currentState;
+        }
 
         switch (currentState)
         {
@@ -122,6 +136,11 @@ public class AC_AgentMovementController : MonoBehaviour
 
     void ChaseTarget()
     {
+        if (playerTarget == null)
+        {
+            return;
+        }
+
         Vector3 targetPosition = new Vector3(
             playerTarget.position.x,
             transform.position.y,
@@ -136,12 +155,15 @@ public class AC_AgentMovementController : MonoBehaviour
 
     void AttackTarget()
     {
+        if (playerTarget == null)
+        {
+            return;
+        }
+
         Vector3 direction = playerTarget.position - transform.position;
         direction.y = 0f;
 
         RotateTowardsTarget(direction);
-
-        Debug.Log("Agent attacking target");
     }
 
     void FollowCalculatedPath()
