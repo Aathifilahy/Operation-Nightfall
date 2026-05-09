@@ -24,8 +24,13 @@ public class AC_AgentMovementController : MonoBehaviour
     [Header("Chase Settings")]
     public Transform playerTarget;
     public float chaseSpeed = 5f;
-    public float chaseRange = 6f;
+    public float chaseRange = 8f;
     public float attackRange = 1.5f;
+
+    [Header("Attack Settings")]
+    public PlayerHealth playerHealth;
+    public int damageAmount = 10;
+    public float attackCooldown = 1.5f;
 
     [Header("Path Following Settings")]
     public float pathMoveSpeed = 4f;
@@ -39,6 +44,7 @@ public class AC_AgentMovementController : MonoBehaviour
     private bool hasPath = false;
 
     private AgentState previousState;
+    private float nextAttackTime = 0f;
 
     void Start()
     {
@@ -164,6 +170,14 @@ public class AC_AgentMovementController : MonoBehaviour
         direction.y = 0f;
 
         RotateTowardsTarget(direction);
+
+        if (playerHealth != null && Time.time >= nextAttackTime)
+        {
+            playerHealth.TakeDamage(damageAmount);
+            nextAttackTime = Time.time + attackCooldown;
+
+            Debug.Log("Guard attacked player for " + damageAmount + " damage");
+        }
     }
 
     void FollowCalculatedPath()
