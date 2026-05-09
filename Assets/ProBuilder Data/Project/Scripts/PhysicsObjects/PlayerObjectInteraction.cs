@@ -12,6 +12,7 @@ public class PlayerObjectInteraction : MonoBehaviour
     public float throwForce = 8f;
 
     private PhysicsObject heldObject;
+    private DynamicBlockerEvent heldDynamicEvent; // <- reference to event script
 
     void Update()
     {
@@ -67,40 +68,30 @@ public class PlayerObjectInteraction : MonoBehaviour
         if (nearestObject != null)
         {
             heldObject = nearestObject;
+            heldDynamicEvent = heldObject.GetComponent<DynamicBlockerEvent>(); // <- cache event
 
             heldObject.Rigidbody.useGravity = false;
-            heldObject.Rigidbody.linearVelocity = Vector3.zero;
+            heldObject.Rigidbody.velocity = Vector3.zero;
             heldObject.Rigidbody.angularVelocity = Vector3.zero;
 
-            if (interactionUI != null)
-            {
-                interactionUI.ShowFeedback("Object picked up.");
-            }
-
+            interactionUI?.ShowFeedback("Object picked up.");
             Debug.Log("Picked up: " + heldObject.name);
         }
         else
         {
-            if (interactionUI != null)
-            {
-                interactionUI.ShowFeedback("No object nearby.");
-            }
-
+            interactionUI?.ShowFeedback("No object nearby.");
             Debug.Log("No physics object nearby.");
         }
     }
 
     void MoveHeldObject()
     {
-        if (carryPoint == null || heldObject == null)
-        {
-            return;
-        }
+        if (carryPoint == null || heldObject == null) return;
 
         Vector3 targetPosition = carryPoint.position;
         Vector3 direction = targetPosition - heldObject.transform.position;
 
-        heldObject.Rigidbody.linearVelocity = direction * carryMoveSpeed;
+        heldObject.Rigidbody.velocity = direction * carryMoveSpeed;
     }
 
     void DropObject()
@@ -109,13 +100,14 @@ public class PlayerObjectInteraction : MonoBehaviour
 
         heldObject.Rigidbody.useGravity = true;
 
-        if (interactionUI != null)
-        {
-            interactionUI.ShowFeedback("Object dropped.");
-        }
+        // Trigger dynamic blocker event if present
+        heldDynamicEvent?.TriggerDrop();
 
+        interactionUI?.ShowFeedback("Object dropped.");
         Debug.Log("Dropped: " + heldObject.name);
+
         heldObject = null;
+        heldDynamicEvent = null;
     }
 
     void ThrowObject()
@@ -125,19 +117,19 @@ public class PlayerObjectInteraction : MonoBehaviour
         Rigidbody rb = heldObject.Rigidbody;
 
         rb.useGravity = true;
-        rb.linearVelocity = Vector3.zero;
+        rb.velocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        heldObject = null;
+        // Trigger dynamic blocker event if present
+        heldDynamicEvent?.TriggerThrow();
 
         rb.AddForce(transform.forward * throwForce, ForceMode.Impulse);
 
-        if (interactionUI != null)
-        {
-            interactionUI.ShowFeedback("Object thrown.");
-        }
-
+        interactionUI?.ShowFeedback("Object thrown.");
         Debug.Log("Object thrown.");
+
+        heldObject = null;
+        heldDynamicEvent = null;
     }
 
     void OnDrawGizmosSelected()
