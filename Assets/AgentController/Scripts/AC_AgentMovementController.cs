@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class AC_AgentMovementController : MonoBehaviour
@@ -6,7 +7,8 @@ public class AC_AgentMovementController : MonoBehaviour
     {
         Patrol,
         Chase,
-        Attack
+        Attack,
+        FollowPath
     }
 
     [Header("Current State")]
@@ -25,9 +27,16 @@ public class AC_AgentMovementController : MonoBehaviour
     public float chaseRange = 6f;
     public float attackRange = 1.5f;
 
+    [Header("Path Following Settings")]
+    public float pathMoveSpeed = 4f;
+
     private int currentPointIndex = 0;
     private float waitTimer = 0f;
     private bool isWaiting = false;
+
+    private List<Vector3> currentPath = new List<Vector3>();
+    private int currentPathIndex = 0;
+    private bool hasPath = false;
 
     void Update()
     {
@@ -46,11 +55,21 @@ public class AC_AgentMovementController : MonoBehaviour
             case AgentState.Attack:
                 AttackTarget();
                 break;
+
+            case AgentState.FollowPath:
+                FollowCalculatedPath();
+                break;
         }
     }
 
     void UpdateState()
     {
+        if (hasPath)
+        {
+            currentState = AgentState.FollowPath;
+            return;
+        }
+
         if (playerTarget == null)
         {
             currentState = AgentState.Patrol;
@@ -123,6 +142,61 @@ public class AC_AgentMovementController : MonoBehaviour
         RotateTowardsTarget(direction);
 
         Debug.Log("Agent attacking target");
+    }
+
+    void FollowCalculatedPath()
+    {
+        if (currentPath == null || currentPath.Count == 0)
+        {
+            hasPath = false;
+            currentState = AgentState.Patrol;
+            return;
+        }
+
+        if (currentPathIndex >= currentPath.Count)
+        {
+            hasPath = false;
+            currentPath.Clear();
+            currentPathIndex = 0;
+            currentState = AgentState.Patrol;
+
+            Debug.Log("Agent finished following calculated path");
+            return;
+        }
+
+        Vector3 targetPosition = new Vector3(
+            currentPath[currentPathIndex].x,
+            transform.position.y,
+            currentPath[currentPathIndex].z
+        );
+
+        Vector3 direction = targetPosition - transform.position;
+        float distance = direction.magnitude;
+
+        if (distance <= stoppingDistance)
+        {
+            currentPathIndex++;
+            return;
+        }
+
+        MoveTowardsTarget(direction, pathMoveSpeed);
+        RotateTowardsTarget(direction);
+    }
+
+    public void SetPath(List<Vector3> newPath)
+    {
+        if (newPath == null || newPath.Count == 0)
+        {
+            Debug.LogWarning("SetPath received an empty path");
+            return;
+        }
+
+        currentPath = new List<Vector3>(newPath);
+        currentPathIndex = 0;
+        hasPath = true;
+        currentState = AgentState.FollowPath;
+
+        Debug.Log("Agent received new path with " + currentPath.Count + " points");
     }
 
     void MoveTowardsTarget(Vector3 direction, float speed)
