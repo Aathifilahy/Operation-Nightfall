@@ -71,7 +71,7 @@ public class PlayerObjectInteraction : MonoBehaviour
             heldDynamicEvent = heldObject.GetComponent<DynamicBlockerEvent>(); // <- cache event
 
             heldObject.Rigidbody.useGravity = false;
-            heldObject.Rigidbody.velocity = Vector3.zero;
+            heldObject.Rigidbody.linearVelocity = Vector3.zero;
             heldObject.Rigidbody.angularVelocity = Vector3.zero;
 
             interactionUI?.ShowFeedback("Object picked up.");
@@ -91,7 +91,7 @@ public class PlayerObjectInteraction : MonoBehaviour
         Vector3 targetPosition = carryPoint.position;
         Vector3 direction = targetPosition - heldObject.transform.position;
 
-        heldObject.Rigidbody.velocity = direction * carryMoveSpeed;
+        heldObject.Rigidbody.linearVelocity = direction * carryMoveSpeed;
     }
 
     void DropObject()
@@ -117,7 +117,7 @@ public class PlayerObjectInteraction : MonoBehaviour
         Rigidbody rb = heldObject.Rigidbody;
 
         rb.useGravity = true;
-        rb.velocity = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
         // Trigger dynamic blocker event if present

@@ -1,0 +1,21 @@
+# Core Developer Asset Notes
+
+## Role
+Member 3 – Core Developer
+
+## Assets
+- AccessKeycard (Prefab)
+- DataCorenew (Prefab)
+- Playernew (Prefab)
+
+## Tools
+- Blender (for modeling)
+- Unity (import, prefab setup, materials)
+
+## Workflow
+1. Model assets in Blender
+2. Export FBX
+3. Import FBX into Unity (Models folder)
+4. Create Prefabs in Prefabs folder
+5. Assign Materials from Materials folder
+6. Verify scale, rotation, and visibility in Scene
