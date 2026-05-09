@@ -21,7 +21,10 @@ public class AStarPathfinder : MonoBehaviour
 
         if (startNode == null || goalNode == null)
         {
-            Debug.LogWarning("Start or goal node is null!");
+            Debug.LogWarning(
+                $"Pathfinding Failed: StartNode is {(startNode == null ? "NULL" : "OK")}, " +
+                $"GoalNode is {(goalNode == null ? "NULL" : "OK")}. " +
+                "Check if points are within the graph bounds.");
             return null;
         }
 
@@ -92,7 +95,28 @@ public class AStarPathfinder : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (showDebugGizmos && lastPath != null)
+        if (!showDebugGizmos)
+            return;
+
+        if (graphLoader != null && graphLoader.Nodes != null)
+        {
+            Gizmos.color = Color.red;
+            foreach (var node in graphLoader.Nodes)
+            {
+                if (node == null || node.neighbors == null)
+                    continue;
+
+                foreach (var neighbor in node.neighbors)
+                {
+                    if (neighbor == null)
+                        continue;
+
+                    Gizmos.DrawLine(node.Position, neighbor.Position);
+                }
+            }
+        }
+
+        if (lastPath != null)
         {
             Gizmos.color = Color.green;
             for (int i = 0; i < lastPath.Count - 1; i++)
