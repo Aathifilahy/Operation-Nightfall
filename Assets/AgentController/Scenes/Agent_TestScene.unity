@@ -252,7 +252,7 @@ Transform:
   m_GameObject: {fileID: 439176348}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 4}
+  m_LocalPosition: {x: 2, y: 0.5, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -381,15 +381,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16edb2114df52ac4b86bd42231f0435a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentState: 0
   patrolPoints:
   - {fileID: 364140075}
   - {fileID: 1590852610}
   - {fileID: 1302717154}
   - {fileID: 1501934025}
-  moveSpeed: 3
+  patrolSpeed: 3
   rotationSpeed: 8
   stoppingDistance: 0.2
   waitTimeAtPoint: 0.5
+  playerTarget: {fileID: 439176352}
+  chaseSpeed: 5
+  chaseRange: 6
+  attackRange: 1.5
 --- !u!1 &629048648
 GameObject:
   m_ObjectHideFlags: 0

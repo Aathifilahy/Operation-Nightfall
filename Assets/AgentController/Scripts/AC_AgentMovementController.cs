@@ -2,12 +2,28 @@ using UnityEngine;
 
 public class AC_AgentMovementController : MonoBehaviour
 {
+    public enum AgentState
+    {
+        Patrol,
+        Chase,
+        Attack
+    }
+
+    [Header("Current State")]
+    public AgentState currentState = AgentState.Patrol;
+
     [Header("Patrol Settings")]
     public Transform[] patrolPoints;
-    public float moveSpeed = 3f;
+    public float patrolSpeed = 3f;
     public float rotationSpeed = 8f;
     public float stoppingDistance = 0.2f;
     public float waitTimeAtPoint = 0.5f;
+
+    [Header("Chase Settings")]
+    public Transform playerTarget;
+    public float chaseSpeed = 5f;
+    public float chaseRange = 6f;
+    public float attackRange = 1.5f;
 
     private int currentPointIndex = 0;
     private float waitTimer = 0f;
@@ -15,7 +31,46 @@ public class AC_AgentMovementController : MonoBehaviour
 
     void Update()
     {
-        PatrolMovement();
+        UpdateState();
+
+        switch (currentState)
+        {
+            case AgentState.Patrol:
+                PatrolMovement();
+                break;
+
+            case AgentState.Chase:
+                ChaseTarget();
+                break;
+
+            case AgentState.Attack:
+                AttackTarget();
+                break;
+        }
+    }
+
+    void UpdateState()
+    {
+        if (playerTarget == null)
+        {
+            currentState = AgentState.Patrol;
+            return;
+        }
+
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTarget.position);
+
+        if (distanceToPlayer <= attackRange)
+        {
+            currentState = AgentState.Attack;
+        }
+        else if (distanceToPlayer <= chaseRange)
+        {
+            currentState = AgentState.Chase;
+        }
+        else
+        {
+            currentState = AgentState.Patrol;
+        }
     }
 
     void PatrolMovement()
@@ -42,14 +97,38 @@ public class AC_AgentMovementController : MonoBehaviour
             return;
         }
 
-        MoveTowardsTarget(direction);
+        MoveTowardsTarget(direction, patrolSpeed);
         RotateTowardsTarget(direction);
     }
 
-    void MoveTowardsTarget(Vector3 direction)
+    void ChaseTarget()
+    {
+        Vector3 targetPosition = new Vector3(
+            playerTarget.position.x,
+            transform.position.y,
+            playerTarget.position.z
+        );
+
+        Vector3 direction = targetPosition - transform.position;
+
+        MoveTowardsTarget(direction, chaseSpeed);
+        RotateTowardsTarget(direction);
+    }
+
+    void AttackTarget()
+    {
+        Vector3 direction = playerTarget.position - transform.position;
+        direction.y = 0f;
+
+        RotateTowardsTarget(direction);
+
+        Debug.Log("Agent attacking target");
+    }
+
+    void MoveTowardsTarget(Vector3 direction, float speed)
     {
         Vector3 moveDirection = direction.normalized;
-        transform.position += moveDirection * moveSpeed * Time.deltaTime;
+        transform.position += moveDirection * speed * Time.deltaTime;
     }
 
     void RotateTowardsTarget(Vector3 direction)
@@ -60,6 +139,7 @@ public class AC_AgentMovementController : MonoBehaviour
         }
 
         Quaternion targetRotation = Quaternion.LookRotation(direction.normalized);
+
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             targetRotation,
