@@ -1,78 +1,95 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AC_BFSSearch : MonoBehaviour
+public class AC_BFSSearch_Integration : MonoBehaviour
 {
-    private Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>();
+    [Header("Assign in Inspector")]
+    public AC_PathFollower PathFollower;  // Your guard prefab in the scene
+    public Transform NodeA;
+    public Transform NodeB;
+    public Transform NodeC;
+    public Transform NodeD;
+    public Transform NodeE;
+    public Transform NodeF;
+
+    // Graph stored as Transform nodes
+    private Dictionary<Transform, List<Transform>> graph = new Dictionary<Transform, List<Transform>>();
 
     void Start()
     {
-        CreateTestGraph();
+        CreateGraph();
 
-        List<string> finalPath = RunBFS("A", "F");
+        // Run BFS from NodeA to NodeF
+        List<Transform> path = RunBFS(NodeA, NodeF);
 
-        Debug.Log("Final BFS Path: " + string.Join(" -> ", finalPath));
+        Debug.Log("Final BFS Path: " + string.Join(" -> ", path.ConvertAll(n => n.name)));
+
+        // Assign path to guard
+        if (PathFollower != null)
+        {
+            PathFollower.PathNodes = path;
+        }
     }
 
-    void CreateTestGraph()
+    void CreateGraph()
     {
-        graph["A"] = new List<string> { "B", "C" };
-        graph["B"] = new List<string> { "A", "D" };
-        graph["C"] = new List<string> { "A", "E" };
-        graph["D"] = new List<string> { "B", "F" };
-        graph["E"] = new List<string> { "C", "F" };
-        graph["F"] = new List<string> { "D", "E" };
+        graph[NodeA] = new List<Transform> { NodeB, NodeC };
+        graph[NodeB] = new List<Transform> { NodeA, NodeD };
+        graph[NodeC] = new List<Transform> { NodeA, NodeE };
+        graph[NodeD] = new List<Transform> { NodeB, NodeF };
+        graph[NodeE] = new List<Transform> { NodeC, NodeF };
+        graph[NodeF] = new List<Transform> { NodeD, NodeE };
     }
 
-    List<string> RunBFS(string startNode, string goalNode)
+    List<Transform> RunBFS(Transform startNode, Transform goalNode)
     {
-        Queue<string> queue = new Queue<string>();
-        HashSet<string> visited = new HashSet<string>();
-        Dictionary<string, string> cameFrom = new Dictionary<string, string>();
+        Queue<Transform> queue = new Queue<Transform>();
+        HashSet<Transform> visited = new HashSet<Transform>();
+        Dictionary<Transform, Transform> cameFrom = new Dictionary<Transform, Transform>();
 
         queue.Enqueue(startNode);
         visited.Add(startNode);
 
-        Debug.Log("BFS started from " + startNode + " to " + goalNode);
+        Debug.Log("BFS started from " + startNode.name + " to " + goalNode.name);
 
         while (queue.Count > 0)
         {
-            string currentNode = queue.Dequeue();
+            Transform current = queue.Dequeue();
 
-            Debug.Log("Visited Node: " + currentNode);
+            Debug.Log("Visited Node: " + current.name);
 
-            if (currentNode == goalNode)
+            if (current == goalNode)
             {
-                Debug.Log("Goal found: " + goalNode);
+                Debug.Log("Goal found: " + goalNode.name);
                 return BuildPath(cameFrom, startNode, goalNode);
             }
 
-            foreach (string neighbour in graph[currentNode])
+            foreach (Transform neighbor in graph[current])
             {
-                if (!visited.Contains(neighbour))
+                if (!visited.Contains(neighbor))
                 {
-                    visited.Add(neighbour);
-                    cameFrom[neighbour] = currentNode;
-                    queue.Enqueue(neighbour);
+                    visited.Add(neighbor);
+                    cameFrom[neighbor] = current;
+                    queue.Enqueue(neighbor);
                 }
             }
         }
 
         Debug.LogWarning("No path found.");
-        return new List<string>();
+        return new List<Transform>();
     }
 
-    List<string> BuildPath(Dictionary<string, string> cameFrom, string startNode, string goalNode)
+    List<Transform> BuildPath(Dictionary<Transform, Transform> cameFrom, Transform startNode, Transform goalNode)
     {
-        List<string> path = new List<string>();
-        string currentNode = goalNode;
+        List<Transform> path = new List<Transform>();
+        Transform current = goalNode;
 
-        path.Add(currentNode);
+        path.Add(current);
 
-        while (currentNode != startNode)
+        while (current != startNode)
         {
-            currentNode = cameFrom[currentNode];
-            path.Add(currentNode);
+            current = cameFrom[current];
+            path.Add(current);
         }
 
         path.Reverse();
