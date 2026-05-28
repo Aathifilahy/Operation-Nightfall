@@ -1,128 +1,332 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Fully functional A* pathfinding script for Zone A using CustomNavMeshGraph.
+/// Supports dynamic edge blocking for throwable objects / DynamicBlockers.
+/// Returns List<Vector3> for AgentController to follow.
+/// </summary>
 public class AStarPathfinder : MonoBehaviour
 {
-    public GraphLoader graphLoader; // Assign in Inspector
-    public bool showDebugGizmos = true;
+    [Header("Graph Reference")]
+    public CustomNavMeshGraph graph;
 
-    private List<Node> lastPath = new List<Node>();
+    [Header("Dynamic Blocked Edges")]
+    public List<BlockedEdge> blockedEdges = new List<BlockedEdge>();
 
-    void Awake()
-    {
-        if (graphLoader == null)
-            Debug.LogError("GraphLoader not assigned!");
-    }
+    [Header("Debug")]
+    public bool drawLastPath = true;
+    public bool drawBlockedEdges = true;
 
+    private List<Vector3> lastPath = new List<Vector3>();
+
+    /// <summary>
+    /// Public method used by AgentController.
+    /// Finds a path from world start position to world goal position.
+    /// </summary>
     public List<Vector3> FindPath(Vector3 startPos, Vector3 goalPos)
     {
-        Node startNode = graphLoader.GetClosestNode(startPos);
-        Node goalNode = graphLoader.GetClosestNode(goalPos);
-
-        if (startNode == null || goalNode == null)
+        if (graph == null)
         {
-            Debug.LogWarning(
-                $"Pathfinding Failed: StartNode is {(startNode == null ? "NULL" : "OK")}, " +
-                $"GoalNode is {(goalNode == null ? "NULL" : "OK")}. " +
-                "Check if points are within the graph bounds.");
+            Debug.LogError("AStarPathfinder: Graph reference is missing.");
             return null;
         }
 
-        List<Node> openSet = new List<Node> { startNode };
-        HashSet<Node> closedSet = new HashSet<Node>();
+        if (graph.Nodes == null || graph.Nodes.Count == 0)
+        {
+            Debug.LogError("AStarPathfinder: Graph has no nodes.");
+            return null;
+        }
 
-        startNode.GCost = 0;
-        startNode.HCost = Heuristic.Estimate(startNode, goalNode);
-        startNode.Parent = null;
+        var startNode = graph.GetClosestNode(startPos);
+        var goalNode = graph.GetClosestNode(goalPos);
+
+        if (startNode == null || goalNode == null)
+        {
+            Debug.LogWarning("AStarPathfinder: Start or Goal node not found.");
+            return null;
+        }
+
+        lastPath = FindPath(startNode, goalNode);
+        return lastPath;
+    }
+
+    /// <summary>
+    /// Core A* algorithm.
+    /// f(n) = g(n) + h(n)
+    /// g(n) = actual cost from start to current node
+    /// h(n) = estimated cost from current node to goal
+    /// </summary>
+    private List<Vector3> FindPath(CustomNavMeshGraph.NavMeshNode start, CustomNavMeshGraph.NavMeshNode goal)
+    {
+        PriorityQueue<CustomNavMeshGraph.NavMeshNode> openSet =
+            new PriorityQueue<CustomNavMeshGraph.NavMeshNode>();
+
+        HashSet<int> closedSet = new HashSet<int>();
+
+        Dictionary<int, int> cameFrom = new Dictionary<int, int>();
+        Dictionary<int, float> gScore = new Dictionary<int, float>();
+        Dictionary<int, float> fScore = new Dictionary<int, float>();
+
+        foreach (var node in graph.Nodes)
+        {
+            gScore[node.index] = Mathf.Infinity;
+            fScore[node.index] = Mathf.Infinity;
+        }
+
+        gScore[start.index] = 0f;
+        fScore[start.index] = Heuristic(start, goal);
+
+        openSet.Enqueue(start, fScore[start.index]);
 
         while (openSet.Count > 0)
         {
-            Node currentNode = openSet[0];
-            for (int i = 1; i < openSet.Count; i++)
+            var current = openSet.Dequeue();
+
+            if (current.index == goal.index)
             {
-                if (openSet[i].FCost < currentNode.FCost ||
-                    (openSet[i].FCost == currentNode.FCost && openSet[i].HCost < currentNode.HCost))
-                    currentNode = openSet[i];
+                return ReconstructPath(cameFrom, current);
             }
 
-            openSet.Remove(currentNode);
-            closedSet.Add(currentNode);
+            closedSet.Add(current.index);
 
-            if (currentNode == goalNode)
+            foreach (int neighborIndex in current.neighbors)
             {
-                List<Vector3> path = ReconstructPath(goalNode);
-                lastPath = new List<Node>();
-                foreach (var n in path)
-                    lastPath.Add(graphLoader.GetClosestNode(n));
-                return path;
-            }
+                if (neighborIndex < 0 || neighborIndex >= graph.Nodes.Count)
+                {
+                    Debug.LogWarning($"AStarPathfinder: Invalid neighbor index {neighborIndex}");
+                    continue;
+                }
 
-            foreach (Node neighbor in currentNode.neighbors)
-            {
-                if (!neighbor.Walkable || closedSet.Contains(neighbor))
+                if (IsEdgeBlocked(current.index, neighborIndex))
                     continue;
 
-                float tentativeG = currentNode.GCost + Vector3.Distance(currentNode.Position, neighbor.Position);
+                if (closedSet.Contains(neighborIndex))
+                    continue;
 
-                if (!openSet.Contains(neighbor) || tentativeG < neighbor.GCost)
+                var neighbor = graph.Nodes[neighborIndex];
+
+                float movementCost = Vector3.Distance(current.position, neighbor.position);
+                float tentativeGScore = gScore[current.index] + movementCost;
+
+                if (tentativeGScore < gScore[neighbor.index])
                 {
-                    neighbor.GCost = tentativeG;
-                    neighbor.HCost = Heuristic.Estimate(neighbor, goalNode);
-                    neighbor.Parent = currentNode;
+                    cameFrom[neighbor.index] = current.index;
+                    gScore[neighbor.index] = tentativeGScore;
+                    fScore[neighbor.index] = tentativeGScore + Heuristic(neighbor, goal);
 
-                    if (!openSet.Contains(neighbor))
-                        openSet.Add(neighbor);
+                    if (openSet.Contains(neighbor))
+                    {
+                        openSet.UpdatePriority(neighbor, fScore[neighbor.index]);
+                    }
+                    else
+                    {
+                        openSet.Enqueue(neighbor, fScore[neighbor.index]);
+                    }
                 }
             }
         }
 
-        Debug.LogWarning("No path found!");
+        Debug.LogWarning("AStarPathfinder: No path found.");
         return null;
     }
 
-    private List<Vector3> ReconstructPath(Node goalNode)
+    /// <summary>
+    /// Euclidean distance heuristic.
+    /// Suitable for 3D movement because it estimates straight-line distance.
+    /// </summary>
+    private float Heuristic(CustomNavMeshGraph.NavMeshNode a, CustomNavMeshGraph.NavMeshNode b)
     {
-        List<Vector3> path = new List<Vector3>();
-        Node current = goalNode;
-        while (current != null)
+        return Vector3.Distance(a.position, b.position);
+    }
+
+    /// <summary>
+    /// Reconstructs the final path from goal node back to start node.
+    /// </summary>
+    private List<Vector3> ReconstructPath(
+        Dictionary<int, int> cameFrom,
+        CustomNavMeshGraph.NavMeshNode current)
+    {
+        List<Vector3> totalPath = new List<Vector3>();
+        totalPath.Add(current.position);
+
+        while (cameFrom.ContainsKey(current.index))
         {
-            path.Add(current.Position);
-            current = current.Parent;
+            current = graph.Nodes[cameFrom[current.index]];
+            totalPath.Insert(0, current.position);
         }
-        path.Reverse();
-        return path;
+
+        return totalPath;
+    }
+
+    /// <summary>
+    /// Checks whether an edge is blocked in either direction.
+    /// </summary>
+    public bool IsEdgeBlocked(int fromIndex, int toIndex)
+    {
+        foreach (BlockedEdge edge in blockedEdges)
+        {
+            bool sameDirection = edge.fromIndex == fromIndex && edge.toIndex == toIndex;
+            bool oppositeDirection = edge.fromIndex == toIndex && edge.toIndex == fromIndex;
+
+            if (sameDirection || oppositeDirection)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Called by DynamicBlocker when an object blocks movement between two nodes.
+    /// </summary>
+    public void BlockEdge(int fromIndex, int toIndex)
+    {
+        if (IsEdgeBlocked(fromIndex, toIndex))
+            return;
+
+        blockedEdges.Add(new BlockedEdge(fromIndex, toIndex));
+        Debug.Log($"AStarPathfinder: Edge blocked between {fromIndex} and {toIndex}");
+    }
+
+    /// <summary>
+    /// Called when a dynamic blocker is removed.
+    /// </summary>
+    public void UnblockEdge(int fromIndex, int toIndex)
+    {
+        blockedEdges.RemoveAll(edge =>
+            (edge.fromIndex == fromIndex && edge.toIndex == toIndex) ||
+            (edge.fromIndex == toIndex && edge.toIndex == fromIndex));
+
+        Debug.Log($"AStarPathfinder: Edge unblocked between {fromIndex} and {toIndex}");
+    }
+
+    /// <summary>
+    /// Clears all dynamic blocked edges.
+    /// Useful for testing.
+    /// </summary>
+    public void ClearBlockedEdges()
+    {
+        blockedEdges.Clear();
+        Debug.Log("AStarPathfinder: All blocked edges cleared.");
     }
 
     private void OnDrawGizmos()
     {
-        if (!showDebugGizmos)
+        if (graph == null || graph.Nodes == null)
             return;
 
-        if (graphLoader != null && graphLoader.Nodes != null)
+        if (drawBlockedEdges)
         {
             Gizmos.color = Color.red;
-            foreach (var node in graphLoader.Nodes)
+
+            foreach (BlockedEdge edge in blockedEdges)
             {
-                if (node == null || node.neighbors == null)
+                if (edge.fromIndex < 0 || edge.fromIndex >= graph.Nodes.Count)
                     continue;
 
-                foreach (var neighbor in node.neighbors)
-                {
-                    if (neighbor == null)
-                        continue;
+                if (edge.toIndex < 0 || edge.toIndex >= graph.Nodes.Count)
+                    continue;
 
-                    Gizmos.DrawLine(node.Position, neighbor.Position);
-                }
+                Vector3 from = graph.Nodes[edge.fromIndex].position;
+                Vector3 to = graph.Nodes[edge.toIndex].position;
+
+                Gizmos.DrawLine(from, to);
             }
         }
 
-        if (lastPath != null)
+        if (drawLastPath && lastPath != null && lastPath.Count > 1)
         {
             Gizmos.color = Color.green;
+
             for (int i = 0; i < lastPath.Count - 1; i++)
             {
-                Gizmos.DrawLine(lastPath[i].Position, lastPath[i + 1].Position);
+                Gizmos.DrawLine(lastPath[i], lastPath[i + 1]);
+                Gizmos.DrawSphere(lastPath[i], 0.15f);
+            }
+
+            Gizmos.DrawSphere(lastPath[lastPath.Count - 1], 0.15f);
+        }
+    }
+}
+
+/// <summary>
+/// Unity-serializable edge class.
+/// Better than List<(int, int)> because Unity Inspector can show this.
+/// </summary>
+[System.Serializable]
+public class BlockedEdge
+{
+    public int fromIndex;
+    public int toIndex;
+
+    public BlockedEdge(int fromIndex, int toIndex)
+    {
+        this.fromIndex = fromIndex;
+        this.toIndex = toIndex;
+    }
+}
+
+/// <summary>
+/// Simple priority queue for A* open set.
+/// Lowest priority value is dequeued first.
+/// </summary>
+public class PriorityQueue<T>
+{
+    private List<PriorityQueueElement<T>> elements = new List<PriorityQueueElement<T>>();
+
+    public int Count => elements.Count;
+
+    public void Enqueue(T item, float priority)
+    {
+        elements.Add(new PriorityQueueElement<T>(item, priority));
+        SortByPriority();
+    }
+
+    public T Dequeue()
+    {
+        T item = elements[0].item;
+        elements.RemoveAt(0);
+        return item;
+    }
+
+    public bool Contains(T item)
+    {
+        foreach (var element in elements)
+        {
+            if (EqualityComparer<T>.Default.Equals(element.item, item))
+                return true;
+        }
+
+        return false;
+    }
+
+    public void UpdatePriority(T item, float newPriority)
+    {
+        for (int i = 0; i < elements.Count; i++)
+        {
+            if (EqualityComparer<T>.Default.Equals(elements[i].item, item))
+            {
+                elements[i].priority = newPriority;
+                SortByPriority();
+                return;
             }
         }
+    }
+
+    private void SortByPriority()
+    {
+        elements.Sort((a, b) => a.priority.CompareTo(b.priority));
+    }
+}
+
+public class PriorityQueueElement<T>
+{
+    public T item;
+    public float priority;
+
+    public PriorityQueueElement(T item, float priority)
+    {
+        this.item = item;
+        this.priority = priority;
     }
 }
