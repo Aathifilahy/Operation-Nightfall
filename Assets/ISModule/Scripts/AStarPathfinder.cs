@@ -3,8 +3,11 @@ using UnityEngine;
 
 /// <summary>
 /// Fully functional A* pathfinding script for Zone A using CustomNavMeshGraph.
-/// Supports dynamic edge blocking for throwable objects / DynamicBlockers.
-/// Returns List<Vector3> for AgentController to follow.
+/// Supports:
+/// 1. Static blocked nodes from CustomNavMeshGraph
+/// 2. Dynamic blocked edges for throwable objects / DynamicBlockers
+/// 3. Returns List<Vector3> for AgentController to follow
+/// 4. Debug drawing for last path and blocked edges
 /// </summary>
 public class AStarPathfinder : MonoBehaviour
 {
@@ -21,7 +24,7 @@ public class AStarPathfinder : MonoBehaviour
     private List<Vector3> lastPath = new List<Vector3>();
 
     /// <summary>
-    /// Public method used by AgentController.
+    /// Public method used by AgentController or PathTest.
     /// Finds a path from world start position to world goal position.
     /// </summary>
     public List<Vector3> FindPath(Vector3 startPos, Vector3 goalPos)
@@ -29,12 +32,14 @@ public class AStarPathfinder : MonoBehaviour
         if (graph == null)
         {
             Debug.LogError("AStarPathfinder: Graph reference is missing.");
+            ClearLastPath();
             return null;
         }
 
         if (graph.Nodes == null || graph.Nodes.Count == 0)
         {
             Debug.LogError("AStarPathfinder: Graph has no nodes.");
+            ClearLastPath();
             return null;
         }
 
@@ -44,10 +49,33 @@ public class AStarPathfinder : MonoBehaviour
         if (startNode == null || goalNode == null)
         {
             Debug.LogWarning("AStarPathfinder: Start or Goal node not found.");
+            ClearLastPath();
+            return null;
+        }
+
+        // NEW: Do not allow pathfinding if start or goal node is blocked.
+        if (IsNodeBlocked(startNode))
+        {
+            Debug.LogWarning("AStarPathfinder: Start node is blocked.");
+            ClearLastPath();
+            return null;
+        }
+
+        if (IsNodeBlocked(goalNode))
+        {
+            Debug.LogWarning("AStarPathfinder: Goal node is blocked.");
+            ClearLastPath();
             return null;
         }
 
         lastPath = FindPath(startNode, goalNode);
+
+        if (lastPath == null || lastPath.Count == 0)
+        {
+            ClearLastPath();
+            return null;
+        }
+
         return lastPath;
     }
 
@@ -98,6 +126,7 @@ public class AStarPathfinder : MonoBehaviour
                     continue;
                 }
 
+                // Existing working feature: skip dynamically blocked edges.
                 if (IsEdgeBlocked(current.index, neighborIndex))
                     continue;
 
@@ -105,6 +134,10 @@ public class AStarPathfinder : MonoBehaviour
                     continue;
 
                 var neighbor = graph.Nodes[neighborIndex];
+
+                // NEW: skip blocked graph nodes.
+                if (IsNodeBlocked(neighbor))
+                    continue;
 
                 float movementCost = Vector3.Distance(current.position, neighbor.position);
                 float tentativeGScore = gScore[current.index] + movementCost;
@@ -129,6 +162,18 @@ public class AStarPathfinder : MonoBehaviour
 
         Debug.LogWarning("AStarPathfinder: No path found.");
         return null;
+    }
+
+    /// <summary>
+    /// Checks whether a graph node is blocked.
+    /// This uses the blocked value from CustomNavMeshGraph.
+    /// </summary>
+    private bool IsNodeBlocked(CustomNavMeshGraph.NavMeshNode node)
+    {
+        if (node == null)
+            return true;
+
+        return node.Blocked;
     }
 
     /// <summary>
@@ -208,6 +253,14 @@ public class AStarPathfinder : MonoBehaviour
     {
         blockedEdges.Clear();
         Debug.Log("AStarPathfinder: All blocked edges cleared.");
+    }
+
+    /// <summary>
+    /// Clears the last path so old green debug lines do not remain after no path is found.
+    /// </summary>
+    private void ClearLastPath()
+    {
+        lastPath = new List<Vector3>();
     }
 
     private void OnDrawGizmos()
