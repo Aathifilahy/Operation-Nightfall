@@ -29,6 +29,9 @@ public class AStarPathfinder : MonoBehaviour
     /// </summary>
     public List<Vector3> FindPath(Vector3 startPos, Vector3 goalPos)
     {
+        // NEW: Clear old path before every new calculation.
+        ClearLastPath();
+
         if (graph == null)
         {
             Debug.LogError("AStarPathfinder: Graph reference is missing.");
@@ -53,7 +56,7 @@ public class AStarPathfinder : MonoBehaviour
             return null;
         }
 
-        // NEW: Do not allow pathfinding if start or goal node is blocked.
+        // Do not allow pathfinding if start or goal node is blocked.
         if (IsNodeBlocked(startNode))
         {
             Debug.LogWarning("AStarPathfinder: Start node is blocked.");
@@ -135,7 +138,7 @@ public class AStarPathfinder : MonoBehaviour
 
                 var neighbor = graph.Nodes[neighborIndex];
 
-                // NEW: skip blocked graph nodes.
+                // Skip blocked graph nodes.
                 if (IsNodeBlocked(neighbor))
                     continue;
 
