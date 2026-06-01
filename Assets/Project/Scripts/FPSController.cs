@@ -10,58 +10,67 @@ public class FPSController : MonoBehaviour
     public float gravity = -9.81f;
 
     [Header("Mouse Look")]
-    public float mouseSensitivity = 8f;
+    public float mouseSensitivity = 2.5f;   // Increase this for faster turning
     public float maxLookAngle = 80f;
-    public bool invertLook = false;   // if false: mouse up looks up (standard)
 
     [Header("References")]
-    public Transform playerCamera;
+    public Transform playerCamera;          // Drag your camera here
 
     private CharacterController controller;
     private float xRotation = 0f;
     private Vector3 velocity;
     private bool isGrounded;
+    private bool isSprinting;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+        // Lock cursor to center and hide it
         Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+        HandleMouseLook();
+        HandleMovement();
+        ApplyGravity();
+    }
 
-        // Apply look direction (invert if needed)
-        if (!invertLook)
-            xRotation -= mouseY;   // mouse up (positive) decreases xRotation -> look up? Actually depends on axis.
-        else
-            xRotation += mouseY;
+    void HandleMouseLook()
+    {
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        // Alternative: use this if the above doesn't work
-        // xRotation -= mouseY; // original, try swapping to +=
-
+        xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
         playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * mouseX);
+    }
 
-        // Movement (unchanged)
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-        bool sprint = Input.GetKey(KeyCode.LeftShift);
-
+    void HandleMovement()
+    {
         isGrounded = controller.isGrounded;
         if (isGrounded && velocity.y < 0)
             velocity.y = -2f;
 
-        float speed = sprint ? sprintSpeed : walkSpeed;
+        // Sprint input (hold Left Shift)
+        isSprinting = Input.GetKey(KeyCode.LeftShift);
+        float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
         Vector3 move = transform.right * x + transform.forward * z;
-        controller.Move(move * speed * Time.deltaTime);
+        controller.Move(move * currentSpeed * Time.deltaTime);
 
+        // Jump
         if (Input.GetButtonDown("Jump") && isGrounded)
+        {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+    }
 
+    void ApplyGravity()
+    {
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
