@@ -43,6 +43,7 @@ public class PlayerShooting : MonoBehaviour
             if (currentAmmo > 0)
             {
                 Shoot();
+
                 currentAmmo--;
                 nextFireTime = Time.time + fireRate;
                 UpdateAmmoUI();
@@ -72,12 +73,25 @@ public class PlayerShooting : MonoBehaviour
         {
             Debug.Log("Shot hit: " + hit.collider.name);
 
-            Target target = hit.collider.GetComponent<Target>();
+            // 1. Check if we hit a guard
+            GuardHealth guardHealth = hit.collider.GetComponentInParent<GuardHealth>();
+
+            if (guardHealth != null)
+            {
+                guardHealth.TakeDamage(damage);
+                return;
+            }
+
+            // 2. Check if we hit the old test target
+            Target target = hit.collider.GetComponentInParent<Target>();
 
             if (target != null)
             {
                 target.TakeDamage(damage);
+                return;
             }
+
+            Debug.Log("Hit object has no GuardHealth or Target script.");
         }
         else
         {
