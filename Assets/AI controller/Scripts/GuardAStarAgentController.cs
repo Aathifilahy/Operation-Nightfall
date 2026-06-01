@@ -70,6 +70,9 @@ public class GuardAStarAgentController : MonoBehaviour
     public string attackingParameter = "IsAttacking";
     public string attackTriggerParameter = "Attack";
 
+    [Header("Animation Debug")]
+    public float currentAnimatorSpeedValue;
+
     private List<Vector3> currentPath = new List<Vector3>();
     private int currentPathIndex = 0;
 
@@ -289,6 +292,8 @@ public class GuardAStarAgentController : MonoBehaviour
 
         FaceTarget(player.position);
 
+        // If guard is in attack state but still not close enough to damage,
+        // it runs closer to the player.
         if (distanceToPlayer > damageRange)
         {
             if (direction.sqrMagnitude > 0.0001f)
@@ -304,6 +309,7 @@ public class GuardAStarAgentController : MonoBehaviour
             return;
         }
 
+        // Close enough to actually attack.
         UpdateAnimator(0f);
 
         if (Time.time >= nextAttackTime)
@@ -550,7 +556,24 @@ public class GuardAStarAgentController : MonoBehaviour
         if (!useAnimator || animator == null)
             return;
 
-        SetAnimatorFloat(speedParameter, movementSpeed);
+        float animatorSpeed = 0f;
+
+        if (movementSpeed <= 0.1f)
+        {
+            animatorSpeed = 0f; // Idle
+        }
+        else if (currentState == GuardState.Patrol)
+        {
+            animatorSpeed = 0.5f; // Walk
+        }
+        else
+        {
+            animatorSpeed = 1f; // Run for chase and close attack approach
+        }
+
+        currentAnimatorSpeedValue = animatorSpeed;
+
+        SetAnimatorFloat(speedParameter, animatorSpeed);
         SetAnimatorBool(chasingParameter, currentState == GuardState.Chase);
         SetAnimatorBool(attackingParameter, currentState == GuardState.Attack);
     }
