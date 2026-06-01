@@ -11,6 +11,11 @@ public class PlayerShooting : MonoBehaviour
     public float fireRate = 0.25f;
     public LayerMask shootableLayers;
 
+    [Header("Muzzle Flash / Gun VFX")]
+    public ParticleSystem muzzleFlash;
+    public Light muzzleFlashLight;
+    public float flashLightDuration = 0.05f;
+
     [Header("Ammo")]
     public int maxAmmo = 6;
     public float reloadTime = 3f;
@@ -23,6 +28,8 @@ public class PlayerShooting : MonoBehaviour
     private float nextFireTime;
     private bool isReloading = false;
 
+    private Coroutine muzzleLightCoroutine;
+
     void Start()
     {
         if (playerCamera == null)
@@ -32,6 +39,18 @@ public class PlayerShooting : MonoBehaviour
 
         currentAmmo = maxAmmo;
         UpdateAmmoUI();
+
+        // Keep muzzle light OFF at the start.
+        if (muzzleFlashLight != null)
+        {
+            muzzleFlashLight.enabled = false;
+        }
+
+        // Make sure particle does not auto-play.
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Stop();
+        }
     }
 
     void Update()
@@ -67,6 +86,8 @@ public class PlayerShooting : MonoBehaviour
 
     void Shoot()
     {
+        PlayShootEffects();
+
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
         if (Physics.Raycast(ray, out RaycastHit hit, shootRange, shootableLayers))
@@ -97,6 +118,37 @@ public class PlayerShooting : MonoBehaviour
         {
             Debug.Log("Shot missed");
         }
+    }
+
+    void PlayShootEffects()
+    {
+        // Particle muzzle flash
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            muzzleFlash.Play();
+        }
+
+        // Short light flash
+        if (muzzleFlashLight != null)
+        {
+            if (muzzleLightCoroutine != null)
+            {
+                StopCoroutine(muzzleLightCoroutine);
+            }
+
+            muzzleLightCoroutine = StartCoroutine(MuzzleLightFlash());
+        }
+    }
+
+    IEnumerator MuzzleLightFlash()
+    {
+        muzzleFlashLight.enabled = true;
+
+        yield return new WaitForSeconds(flashLightDuration);
+
+        muzzleFlashLight.enabled = false;
+        muzzleLightCoroutine = null;
     }
 
     IEnumerator Reload()
