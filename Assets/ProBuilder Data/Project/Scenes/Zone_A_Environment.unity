@@ -47792,6 +47792,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0b00a41d005dee04a9f8721de2adcdbc, type: 3}
+--- !u!1 &718227961
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 718227962}
+  m_Layer: 0
+  m_Name: UCS_StartPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &718227962
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 718227961}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 49.8, y: 0, z: -42.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &725738080
 GameObject:
   m_ObjectHideFlags: 0
@@ -71260,6 +71291,37 @@ MonoBehaviour:
   deathTransitionTime: 0.05
   destroyOnDeath: 0
   destroyDelay: 5
+--- !u!1 &1183923063
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1183923064}
+  m_Layer: 0
+  m_Name: UCS_GoalPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1183923064
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183923063}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -30.1, y: 0, z: 3.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1184327297 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8349083987792897590, guid: 3a28bd6e9f8298f4db4d2cbbbbe9ca39, type: 3}
@@ -133640,6 +133702,63 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1 &1931291694
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1931291696}
+  - component: {fileID: 1931291695}
+  m_Layer: 0
+  m_Name: UCS_Graph_Visualizer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1931291695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931291694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f01cc3e4a55d971409c949bf3938d6db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  customGraph: {fileID: 1174934994}
+  startPoint: {fileID: 0}
+  goalPoint: {fileID: 0}
+  startNodeIndex: 0
+  goalNodeIndex: 1
+  toggleDebugKey: 118
+  runUCSKey: 117
+  showDebugAtStart: 0
+  drawGraphEdges: 1
+  nodeSize: 0.35
+  graphLineWidth: 0.05
+  pathLineWidth: 0.15
+  heightOffset: 0.5
+--- !u!4 &1931291696
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931291694}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -20.8, y: 0.049999952, z: 12.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &1946823285
 Mesh:
   m_ObjectHideFlags: 0
@@ -150880,3 +150999,6 @@ SceneRoots:
   - {fileID: 987190348}
   - {fileID: 410849396}
   - {fileID: 970271168}
+  - {fileID: 1931291696}
+  - {fileID: 718227962}
+  - {fileID: 1183923064}
