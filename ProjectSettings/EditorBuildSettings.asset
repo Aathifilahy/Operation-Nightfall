@@ -4,7 +4,13 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/ProBuilder Data/Project/Scenes/Zone_A_Environment.unity
+    guid: 35d54e7265211274c9858c4eab85735a
+  - enabled: 1
+    path: Assets/ProBuilder Data/Project/Scenes/Zone_B_Environment.unity
+    guid: 5fb03a8f585e77a4385fd87b02297c41
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 301776d4439ff3441ad1e3ea75955c1d, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: f1f9a1e4402f366488a50d53e5578a33, type: 3}
